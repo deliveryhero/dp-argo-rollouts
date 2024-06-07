@@ -93,23 +93,24 @@ func (c *rolloutContext) syncEphemeralMetadata(ctx context.Context, rs *appsv1.R
 	eg.SetLimit(c.ephemeralMetadataThreads)
 
 	for _, pod := range pods {
-		eg.Go(func() error {
-			newPodObjectMeta, podModified := replicasetutil.SyncEphemeralPodMetadata(&pod.ObjectMeta, existingPodMetadata, podMetadata)
-			if podModified {
-				pod.ObjectMeta = *newPodObjectMeta
-				_, err = c.kubeclientset.CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
-				if err != nil {
-					return err
-				}
-				c.log.Infof("synced ephemeral metadata %v to Pod %s", podMetadata, pod.Name)
+		newPodObjectMeta, podModified := replicasetutil.SyncEphemeralPodMetadata(&pod.ObjectMeta, existingPodMetadata, podMetadata)
+		if podModified {
+			pod.ObjectMeta = *newPodObjectMeta
+			_, err = c.kubeclientset.CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
+			if err != nil {
+				return err
 			}
-			return nil
-		})
+			c.log.Infof("synced ephemeral metadata %v to Pod %s", podMetadata, pod.Name)
+		}
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
+	// 2. Update ReplicaSet so that any new pods it creates will have the metadata
+	rs, err = c.updateReplicaSetFallbackToPatch(ctx, modifiedRS)
+	if err != nil {
+		c.log.Infof("failed to sync ephemeral metadata %v to ReplicaSet %s: %v", podMetadata, rs.Name, err)
+		return fmt.Errorf("failed to sync ephemeral metadata: %w", err)
 	}
 
+	c.log.Infof("synced ephemeral metadata %v to ReplicaSet %s", podMetadata, rs.Name)
 	return nil
 }
