@@ -1,0 +1,23 @@
+kind: pipeline
+type: docker
+name: controller
+
+features:
+  docker-daemon@v1:
+    enabled: true
+
+trigger:
+  event: [tag]
+
+steps:
+  - name: build controller
+    image: golang:1.22
+    commands:
+      - make controller
+
+  - name: build & push image
+    image: plugins/harbor
+    settings:
+      repo: ${DRONE_REPO}
+      tags:
+        - ${DRONE_TAG}
