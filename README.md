@@ -1,3 +1,20 @@
+# Fork of Argo Rollouts
+
+This is a fork of Argo Rollouts which we patch with nessecary before they're merged upstream.
+
+## Workflow
+
+The `dh-main` acts as the main branch of our fork. When a new Argo Rollouts is released it should be rebased into
+this branch. 
+
+A release is triggered by creating a new tag from this branch. 
+
+It should follow the convention of: `{argo-version}-dhpatch-{version}`
+
+- `argo-version`: Corresponds to the latest Argo Rollouts version, such as `v1.7.2`
+- `version`: Should be incremented for every "release" or "patch" created for this particular version.
+
+Example: `v1.7.2-dhpatch-1`
 
 # Argo Rollouts - Progressive Delivery for Kubernetes
 
