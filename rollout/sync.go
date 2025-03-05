@@ -85,7 +85,6 @@ func (c *rolloutContext) syncReplicaSetRevision() (*appsv1.ReplicaSet, error) {
 		rs, err := c.updateReplicaSetFallbackToPatch(ctx, rsCopy)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update replicaset revision on %s: %w", rsCopy.Name, err)
-			return nil, fmt.Errorf("failed to update replicaset revision on %s: %w", rsCopy.Name, err)
 		}
 		return rs, nil
 	}
