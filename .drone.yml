@@ -7,15 +7,16 @@ features:
     enabled: true
 
 trigger:
-  event: [tag]
+  event:
+    - tag
 
 steps:
-  - name: build controller
+  - name: build
     image: golang:1.22
     commands:
       - make controller
-
-  - name: build & push image
+        
+  - name: push
     image: plugins/harbor
     settings:
       repo: ${DRONE_REPO}
