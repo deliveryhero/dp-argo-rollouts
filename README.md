@@ -11,10 +11,10 @@ A release is triggered by creating a new tag from this branch.
 
 It should follow the convention of: `{argo-version}-dhpatch-{version}`
 
-- `argo-version`: Corresponds to the latest Argo Rollouts version, such as `v1.7.2`
+- `argo-version`: Corresponds to the latest Argo Rollouts version, such as `v1.8.3`
 - `version`: Should be incremented for every "release" or "patch" created for this particular version.
 
-Example: `v1.7.2-dhpatch-1`
+Example: `v1.8.3-dhpatch-1`
 
 # Argo Rollouts - Progressive Delivery for Kubernetes
 
