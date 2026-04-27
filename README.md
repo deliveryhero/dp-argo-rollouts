@@ -1,6 +1,6 @@
 # Fork of Argo Rollouts
 
-This is a fork of Argo Rollouts which we patch with nessecary before they're merged upstream.
+This is a fork of Argo Rollouts which we patch with necessary changes before they're merged upstream.
 
 ## Workflow
 
