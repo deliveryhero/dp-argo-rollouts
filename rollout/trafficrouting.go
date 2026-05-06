@@ -7,10 +7,9 @@ import (
 	"strings"
 
 	"github.com/argoproj/argo-rollouts/utils/annotations"
+	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/plugin"
-
-	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/argoproj/argo-rollouts/rollout/trafficrouting"
@@ -135,23 +134,6 @@ func (c *Controller) NewTrafficRoutingReconciler(roCtx *rolloutContext) ([]traff
 	return nil, nil
 }
 
-func (c *rolloutContext) checkReplicasAvailable(rs *appsv1.ReplicaSet, desiredWeight int32) bool {
-	if rs == nil {
-		return false
-	}
-	availableReplicas := rs.Status.AvailableReplicas
-	totalReplicas := *c.rollout.Spec.Replicas
-
-	desiredReplicas := (desiredWeight * totalReplicas) / 100
-	if availableReplicas < desiredReplicas {
-		c.log.Infof("ReplicaSet '%s' has %d available replicas, waiting for %d", rs.Name, availableReplicas, desiredReplicas)
-		return false
-	}
-
-	return true
-
-}
-
 // this currently only be used in the canary strategy
 func (c *rolloutContext) reconcileTrafficRouting() error {
 	reconcilers, err := c.newTrafficRoutingReconciler(c)
@@ -263,9 +245,11 @@ func (c *rolloutContext) reconcileTrafficRouting() error {
 			}
 		}
 
-		if !c.checkReplicasAvailable(c.stableRS, weightutil.MaxTrafficWeight(c.rollout)-desiredWeight) {
+		// Guardrail, which makes sure that we don't switch traffic before there's enough replicas.
+		if !c.checkReplicasAvailable(c.newRS, desiredWeight) {
 			return nil
 		}
+
 		// We need to check for revision > 1 because when we first install the rollout we run step 0 this prevents that.
 		// There is a bigger fix needed for the reasons on why we run step 0 on rollout install, that needs to be explored.
 		revision, revisionFound := annotations.GetRevisionAnnotation(c.rollout)
@@ -330,6 +314,24 @@ func (c *rolloutContext) reconcileTrafficRouting() error {
 		}
 	}
 	return nil
+}
+
+func (c *rolloutContext) checkReplicasAvailable(rs *appsv1.ReplicaSet, desiredWeight int32) bool {
+	if rs == nil {
+		return false
+	}
+
+	availableReplicas := rs.Status.AvailableReplicas
+	totalReplicas := *c.rollout.Spec.Replicas
+
+	desiredReplicas := (desiredWeight * totalReplicas) / 100
+
+	if availableReplicas < desiredReplicas {
+		c.log.Infof("ReplicaSet '%s' has %d available replicas, waiting for %d", rs.Name, availableReplicas, desiredReplicas)
+		return false
+	}
+
+	return true
 }
 
 // calculateDesiredWeightOnAbortOrStableRollback returns the desired weight to use when we are either
